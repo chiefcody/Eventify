@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Management Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.5/main.min.css' rel='stylesheet' />
+
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.5/main.min.js'></script>
+
+
+</head>
+<body>
+    
+    <!-- Navbar -->
+    <nav>
+        <div class="brand-logo">
+            <img src="logo.jpg" alt="Event Tents Logo" class="logo">
+        </div>
+        <div class="nav-links">
+            <ul>
+                <li><a href="/index.html">Home</a></li>
+                <li><a href="/event.html">Event List</a></li>
+                <li><a href="/calendar.html">Calendar</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section id="event-list-section">
+        <h2>Event List</h2>
+        <ul id="event-list">
+            <!-- Events will be populated here -->
+        </ul>
+    </section>
+    
+    <!-- Modal for displaying event details -->
+    <div id="event-details-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-title"></h2>
+            <p id="modal-date"></p>
+            <p id="modal-venue"></p>
+            <p id="modal-description"></p>
+            <a id="modal-link" href="#" target="_blank">Register Here</a>
+        </div>
+    </div>
+    
+   
+
+
+  
+    <!-- Event Submission Form -->
+<section id="event-submission">
+    <h2>Submit an Event</h2>
+    <form id="event-form">
+        <label for="event-title">Event Title:</label>
+        <input type="text" id="event-title" placeholder="Enter event title" required>
+        
+        <label for="event-date">Event Date:</label>
+        <input type="date" id="event-date" required>
+        
+        <label for="event-venue">Event Venue:</label>
+        <input type="text" id="event-venue" placeholder="Enter venue" required>
+        
+        <label for="event-organizer">Organizer:</label>
+        <input type="text" id="event-organizer" placeholder="Enter organizer name" required>
+        
+        <label for="event-description">Event Description:</label>
+        <textarea id="event-description" placeholder="Enter event description" required></textarea>
+        
+        <button type="submit">Submit Event</button>
+    </form>
+
+    <!-- Placeholder for success or error message -->
+    <div id="submission-message"></div>
+</section>
+
+    <!-- Modal HTML -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="event-details"></div>
+        </div>
+    </div>
+<!-- Contact Form HTML -->
+<section id="contact">
+    <h2>Contact Us</h2>
+    <form id="contact-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" placeholder="Enter your name" required>
+        
+        <label for="email">Email:</label>
+        <input type="email" id="email" placeholder="Enter your email" required>
+        
+        <label for="message">Message:</label>
+        <textarea id="message" placeholder="Write your message here" required></textarea>
+        
+        <button type="submit">Submit</button>
+    </form>
+
+    <!-- Placeholder for success or error message -->
+    <div id="form-message"></div>
+</section>
+
+    <!-- Footer -->
+    <footer>
+        <p>Event Management &copy; 2024</p>
+    </footer>
+
+    <script>
+        document.getElementById('event-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+    
+            // Get form values
+            const title = document.getElementById('event-title').value;
+            const date = document.getElementById('event-date').value;
+            const venue = document.getElementById('event-venue').value;
+            const organizer = document.getElementById('event-organizer').value;
+            const description = document.getElementById('event-description').value;
+    
+            // Create an event object
+            const newEvent = {
+                id: Date.now().toString(),
+                name: title,
+                date: new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                description: description,
+                type: 'event'
+            };
+    
+            // Store event in localStorage (or you can push it to a backend)
+            let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+            events.push(newEvent);
+            localStorage.setItem('calendarEvents', JSON.stringify(events));
+    
+            // Show success message
+            document.getElementById('submission-message').innerText = 'Event submitted successfully!';
+            this.reset(); // Reset the form
+        });
+    </script>
+    <script>
+        // Function to render events in the event list
+
+
+
+
+
+// Function to render events in the event list
+function render_event_list() {
+    const event_list = document.getElementById('event-list');
+    event_list.innerHTML = ''; // Clear the list before adding new elements
+
+    let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+    if (events.length === 0) {
+        event_list.innerHTML = '<li>No events to display</li>';
+    } else {
+        events.forEach(event => {
+            const list_item = document.createElement('li');
+            list_item.innerHTML = `
+                <strong>${event.name}</strong>
+                <div>
+                    <button onclick="show_details('${event.id}')">Details</button>
+                    <button onclick="delete_event('${event.id}')">Delete</button>
+                </div>
+            `;
+            event_list.appendChild(list_item);
+        });
+    }
+}
+
+// Function to delete an event from the list and the calendar
+function delete_event(event_id) {
+    // Retrieve events from local storage
+    let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+
+    // Find the index of the event with the matching ID
+    const eventIndex = events.findIndex(e => e.id === event_id);
+
+    // If event exists, remove it from the array
+    if (eventIndex !== -1) {
+        events.splice(eventIndex, 1); // Remove the event
+        localStorage.setItem('calendarEvents', JSON.stringify(events)); // Update local storage
+
+        // Re-render event list
+        render_event_list();
+
+        // Re-render calendar
+        render_calendar();
+    }
+}
+
+// Function to render events on the calendar
+function render_calendar() {
+    // Assuming you're using FullCalendar for calendar rendering
+    let calendarEl = document.getElementById('calendar');
+    let calendarEvents = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+
+    let calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: calendarEvents.map(event => ({
+            title: event.name,
+            start: event.date,  // Adjust based on the event's date format
+            id: event.id,
+            description: event.description
+        })),
+        eventClick: function(info) {
+            show_details(info.event.id); // Show event details when clicked
+        }
+    });
+
+    calendar.render(); // Render the updated calendar
+}
+
+// Call the render functions when the page loads
+document.addEventListener('DOMContentLoaded', function () {
+    render_event_list();
+    render_calendar();
+});
+
+
+
+
+
+
+
+
+function show_details(event_id) {
+    let events = JSON.parse(localStorage.getItem('calendarEvents')) || [];
+    const event = events.find(e => e.id === event_id);
+    if (event) {
+        document.getElementById('modal-title').innerText = event.name;
+        document.getElementById('modal-date').innerText = 'Date: ' + event.date;
+        document.getElementById('modal-venue').innerText = 'Venue: ' + event.venue;
+        document.getElementById('modal-description').innerText = event.description;
+        document.getElementById('modal-link').href = event.registration_link;
+        document.getElementById('event-details-modal').style.display = 'block';
+    }
+}
+
+document.querySelector('.close').onclick = function() {
+    document.getElementById('event-details-modal').style.display = 'none';
+};
+
+window.onclick = function(event) {
+    if (event.target == document.getElementById('event-details-modal')) {
+        document.getElementById('event-details-modal').style.display = 'none';
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+    render_event_list();
+});
+</script>
+
+    
+
+</body>
+</html>
